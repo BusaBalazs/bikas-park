@@ -45,6 +45,23 @@ html, body, #root {
   to { background-position: 300% 0%; }
 }
 
+/* Animated flowing gradient border for the category-select cards — the
+   two colors come from --cat-a/--cat-b custom properties set inline per
+   card, so each category can match its own background image while
+   sharing one animation. */
+.category-border {
+  border-radius: 1.35rem;
+  padding: 3px;
+  background: linear-gradient(120deg, var(--cat-a, #3CFF9A), var(--cat-b, #35E6FF), var(--cat-a, #3CFF9A));
+  background-size: 300% 300%;
+  animation: categoryBorderFlow 5s ease-in-out infinite;
+}
+@keyframes categoryBorderFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 /* --- Mascot animations --- */
 @keyframes mascotIdleBob {
   0%, 100% { transform: translateY(0); }

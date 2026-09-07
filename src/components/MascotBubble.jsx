@@ -11,9 +11,12 @@ export default function MascotBubble({
   actionKey = 0,
   size = 108,
   align = 'left', // 'left' = mascot left, bubble right | 'right' = mirrored
+  tone = 'default', // 'default' = white bubble | 'warning' = amber, for e.g. a wrong QR scan
   onDismiss,
   children, // optional extra content under the text (e.g. Next/Start button)
 }) {
+  const isWarning = tone === 'warning'
+
   return (
     <div className={`flex items-end gap-2 ${align === 'right' ? 'flex-row-reverse' : ''}`}>
       <div className="shrink-0 mascot-pop-in">
@@ -28,10 +31,12 @@ export default function MascotBubble({
           exit={{ opacity: 0, scale: 0.8 }}
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
           onClick={onDismiss}
-          className="relative max-w-[220px] rounded-2xl px-4 py-3 bg-white text-park-bg2 shadow-lg"
+          className={`relative max-w-[220px] rounded-2xl px-4 py-3 shadow-lg border-2 ${
+            isWarning ? 'bg-park-amber text-park-bg2 border-park-red' : 'bg-white text-park-bg2 border-transparent'
+          }`}
         >
           <div
-            className={`absolute bottom-3 w-3 h-3 bg-white rotate-45 ${
+            className={`absolute bottom-3 w-3 h-3 rotate-45 ${isWarning ? 'bg-park-amber' : 'bg-white'} ${
               align === 'right' ? '-right-1.5' : '-left-1.5'
             }`}
           />

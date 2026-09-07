@@ -3,7 +3,7 @@ import { useGame } from '../context/GameContext'
 import MascotBubble from './MascotBubble'
 
 export default function Quiz() {
-  const { t, lang, currentQuiz, quizWrongIndex, answerQuiz, mascot } = useGame()
+  const { t, lang, currentQuiz, quizWrongIndex, quizCorrectIndex, answerQuiz, mascot } = useGame()
   if (!currentQuiz) return null
 
   return (
@@ -28,6 +28,7 @@ export default function Quiz() {
           <div className="flex flex-col gap-2.5">
             {currentQuiz.options.map((opt, i) => {
               const isWrong = quizWrongIndex === i
+              const isCorrect = quizCorrectIndex === i
               return (
                 <motion.button
                   key={i}
@@ -36,7 +37,11 @@ export default function Quiz() {
                   animate={isWrong ? { x: [0, -8, 8, -6, 6, 0] } : {}}
                   transition={{ duration: 0.4 }}
                   className={`px-4 py-3 rounded-2xl border-2 text-sm font-bold text-left transition-colors ${
-                    isWrong ? 'bg-park-red/25 border-park-red text-white' : 'bg-white/5 border-white/15 text-white'
+                    isWrong
+                      ? 'bg-park-red/25 border-park-red text-white'
+                      : isCorrect
+                      ? 'bg-park-green/25 border-park-green text-white'
+                      : 'bg-white/5 border-white/15 text-white'
                   }`}
                 >
                   {opt[lang]}

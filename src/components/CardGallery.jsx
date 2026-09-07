@@ -4,7 +4,7 @@ import { useGame } from '../context/GameContext'
 import { PUZZLE_CATALOG } from '../data/puzzles'
 
 export default function CardGallery() {
-  const { t, lang, album, totalOwned, closeGallery } = useGame()
+  const { t, lang, album, totalOwned, categories, closeGallery } = useGame()
   const [opened, setOpened] = useState(null) // puzzle object or null
 
   return (
@@ -34,45 +34,71 @@ export default function CardGallery() {
             {t.galleryEmpty}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
-            {PUZZLE_CATALOG.map((puzzle, i) => {
-              const owned = !!album[puzzle.id]
-              return (
-                <motion.button
-                  key={puzzle.id}
-                  onClick={() => owned && setOpened(puzzle)}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.06 }}
-                  whileTap={owned ? { scale: 0.96 } : undefined}
-                  className={`relative rounded-2xl overflow-hidden border-2 aspect-[3/4] ${
-                    owned ? 'border-park-amber shadow-neonAmber' : 'border-white/15'
-                  }`}
-                >
-                  <img
-                    src={puzzle.image}
-                    alt={owned ? puzzle.name[lang] : ''}
-                    className={`absolute inset-0 w-full h-full object-cover ${owned ? '' : 'grayscale brightness-[0.3]'}`}
+          // Grouped by category — each category from data/categories.js gets
+          // its own labeled section, so the gallery scales the same way the
+          // category picker does as more categories/pictures are added.
+          categories.map((cat) => {
+            const puzzlesInCat = PUZZLE_CATALOG.filter((p) => p.category === cat.id)
+            if (puzzlesInCat.length === 0) return null
+            const ownedInCat = puzzlesInCat.filter((p) => album[p.id]).length
+
+            return (
+              <div key={cat.id} className="flex flex-col gap-3">
+                <div className="flex items-center gap-2 px-1">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ backgroundColor: cat.accent, boxShadow: `0 0 8px ${cat.accent}` }}
                   />
-                  {owned ? (
-                    <>
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-                      <p className="absolute bottom-2 left-2 right-2 font-display font-900 text-xs text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
-                        {puzzle.name[lang]}
-                      </p>
-                    </>
-                  ) : (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
-                      <span className="text-2xl">🔒</span>
-                      <span className="text-[10px] font-bold text-white/70 uppercase tracking-wide">
-                        {t.galleryLocked}
-                      </span>
-                    </div>
-                  )}
-                </motion.button>
-              )
-            })}
-          </div>
+                  <h2 className="font-display font-900 text-sm text-white tracking-wide">{cat.name[lang]}</h2>
+                  <span className="text-[11px] text-white/60 ml-auto">
+                    {ownedInCat} / {puzzlesInCat.length}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  {puzzlesInCat.map((puzzle, i) => {
+                    const owned = !!album[puzzle.id]
+                    return (
+                      <motion.button
+                        key={puzzle.id}
+                        onClick={() => owned && setOpened(puzzle)}
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.06 }}
+                        whileTap={owned ? { scale: 0.96 } : undefined}
+                        className={`relative rounded-2xl overflow-hidden border-2 aspect-[3/4] ${
+                          owned ? 'border-park-amber shadow-neonAmber' : 'border-white/15'
+                        }`}
+                      >
+                        <img
+                          src={puzzle.image}
+                          alt={owned ? puzzle.name[lang] : ''}
+                          className={`absolute inset-0 w-full h-full object-cover ${
+                            owned ? '' : 'grayscale brightness-[0.3]'
+                          }`}
+                        />
+                        {owned ? (
+                          <>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                            <p className="absolute bottom-2 left-2 right-2 font-display font-900 text-xs text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                              {puzzle.name[lang]}
+                            </p>
+                          </>
+                        ) : (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
+                            <span className="text-2xl">🔒</span>
+                            <span className="text-[10px] font-bold text-white/70 uppercase tracking-wide">
+                              {t.galleryLocked}
+                            </span>
+                          </div>
+                        )}
+                      </motion.button>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })
         )}
 
         <motion.button
@@ -88,34 +114,40 @@ export default function CardGallery() {
       <AnimatePresence>
         {opened && (
           <motion.div
-            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/85 px-4"
+            className="fixed inset-0 z-[80] bg-black/85 overflow-y-auto"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setOpened(null)}
           >
-            <motion.div
-              initial={{ scale: 0.85, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 22 }}
-              onClick={(e) => e.stopPropagation()}
-              className="rounded-3xl overflow-hidden max-w-sm w-full bg-park-bg2 border-[3px] border-park-amber shadow-glass flex flex-col"
-            >
-              <div className="w-full aspect-[3/4]">
-                <img src={opened.image} alt={opened.name[lang]} className="w-full h-full object-cover" />
-              </div>
-              <div className="p-5 flex flex-col gap-2">
-                <h2 className="font-display font-900 text-lg text-white">{opened.name[lang]}</h2>
-                <p className="text-sm text-park-dim leading-relaxed">{opened.info[lang]}</p>
-                <button
-                  onClick={() => setOpened(null)}
-                  className="mt-2 py-3 rounded-2xl font-display font-700 text-sm text-park-dim bg-white/5 border border-white/10"
-                >
-                  {t.galleryClose}
-                </button>
-              </div>
-            </motion.div>
+            {/* Separate scroll-container from the centering flex box below
+                it — a tall card (big image + long info text) can now
+                scroll with the page instead of being clipped off-screen
+                with no way to reach the close button. */}
+            <div className="min-h-full flex items-center justify-center px-4 py-8">
+              <motion.div
+                initial={{ scale: 0.85, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+                onClick={(e) => e.stopPropagation()}
+                className="rounded-3xl overflow-hidden max-w-sm w-full bg-park-bg2 border-[3px] border-park-amber shadow-glass flex flex-col"
+              >
+                <div className="w-full aspect-[3/4] shrink-0">
+                  <img src={opened.image} alt={opened.name[lang]} className="w-full h-full object-cover" />
+                </div>
+                <div className="p-5 flex flex-col gap-2">
+                  <h2 className="font-display font-900 text-lg text-white">{opened.name[lang]}</h2>
+                  <p className="text-sm text-park-dim leading-relaxed">{opened.info[lang]}</p>
+                  <button
+                    onClick={() => setOpened(null)}
+                    className="mt-2 py-3 rounded-2xl font-display font-700 text-sm text-park-dim bg-white/5 border border-white/10"
+                  >
+                    {t.galleryClose}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

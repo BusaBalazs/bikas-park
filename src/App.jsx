@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { GameProvider, useGame } from './context/GameContext'
 import Header from './components/Header'
 import Landing from './components/Landing'
+import CategorySelect from './components/CategorySelect'
 import Reveal from './components/Reveal'
 import ParkMonitor from './components/ParkMonitor'
 import Quiz from './components/Quiz'
@@ -29,6 +30,17 @@ function Root() {
               exit={{ opacity: 0 }}
             >
               <Landing />
+            </motion.div>
+          )}
+          {screen === 'categorySelect' && (
+            <motion.div
+              key="categorySelect"
+              className="min-h-[calc(100vh-57px)]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <CategorySelect />
             </motion.div>
           )}
           {screen === 'reveal' && (

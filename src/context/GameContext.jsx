@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo, useState, useCallback, useRef, useEffect } from 'react'
 import { translations, detectLang } from '../i18n'
 import { PUZZLE_CATALOG } from '../data/puzzles'
+import { CATEGORIES } from '../data/categories'
 import { PIECE_TIME_LIMIT_SECONDS, TOTAL_STATIONS } from '../data/gameConfig'
 import { stationQrCode } from '../data/pieceStations'
 import { useSound } from '../hooks/useSound'
@@ -18,18 +19,23 @@ function shuffledCodes() {
   return arr
 }
 
-function pickNextPuzzle(album) {
-  const unowned = PUZZLE_CATALOG.filter((p) => !album[p.id])
-  const pool = unowned.length > 0 ? unowned : PUZZLE_CATALOG
+// Restricts the catalog to one category (when given), then prefers pieces
+// the player doesn't own yet — falling back to the full in-category pool
+// once everything in it is already collected (so replaying a category
+// with just one image still starts a round instead of dead-ending).
+function pickNextPuzzle(album, categoryId) {
+  const inCategory = categoryId ? PUZZLE_CATALOG.filter((p) => p.category === categoryId) : PUZZLE_CATALOG
+  const unowned = inCategory.filter((p) => !album[p.id])
+  const pool = unowned.length > 0 ? unowned : inCategory
   return pool[Math.floor(Math.random() * pool.length)]
 }
 
 const persisted = loadState()
 
 export function GameProvider({ children }) {
-  const [lang, setLang] = useState(detectLang())
+  const [lang, setLang] = useState(persisted?.lang ?? detectLang())
   const [devMode, setDevMode] = useState(false)
-  // landing | onboarding | reveal | monitor | scan | assemble | gallery
+  // landing | onboarding | categorySelect | reveal | monitor | scan | quiz | assemble | gallery
   const [screen, setScreen] = useState('landing')
 
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(persisted?.hasSeenOnboarding ?? false)
@@ -39,10 +45,11 @@ export function GameProvider({ children }) {
   const [timeLeft, setTimeLeft] = useState(PIECE_TIME_LIMIT_SECONDS)
   const [albumButtonPos, setAlbumButtonPos] = useState(persisted?.albumButtonPos ?? null)
   const [lastSolvedPuzzle, setLastSolvedPuzzle] = useState(null) // shown in the success popup
-  const [mascot, setMascot] = useState({ text: '', action: 'idle', actionKey: 0 })
+  const [mascot, setMascot] = useState({ text: '', action: 'idle', actionKey: 0, tone: 'default' })
   const [preGalleryScreen, setPreGalleryScreen] = useState('monitor')
   const [currentQuiz, setCurrentQuiz] = useState(null) // { question, options, correct }
   const [quizWrongIndex, setQuizWrongIndex] = useState(null)
+  const [quizCorrectIndex, setQuizCorrectIndex] = useState(null)
 
   const timerInterval = useRef(null)
   const sound = useSound()
@@ -51,27 +58,38 @@ export function GameProvider({ children }) {
   const t = useMemo(() => translations[lang], [lang])
 
   useEffect(() => {
-    saveState({ hasSeenOnboarding, album, currentRound, targetDeadline, albumButtonPos })
-  }, [hasSeenOnboarding, album, currentRound, targetDeadline, albumButtonPos])
+    saveState({ lang, hasSeenOnboarding, album, currentRound, targetDeadline, albumButtonPos })
+  }, [lang, hasSeenOnboarding, album, currentRound, targetDeadline, albumButtonPos])
 
   const toggleLang = useCallback(() => setLang((l) => (l === 'hu' ? 'en' : 'hu')), [])
 
-  const say = useCallback((text, action = 'idle') => {
-    setMascot((m) => ({ text, action, actionKey: m.actionKey + 1 }))
+  // `tone` lets a message stand out as a warning (e.g. a wrong QR scan)
+  // without needing a whole separate mascot state — it resets to 'default'
+  // on the next say() unless that call passes 'warning' again.
+  const say = useCallback((text, action = 'idle', tone = 'default') => {
+    setMascot((m) => ({ text, action, tone, actionKey: m.actionKey + 1 }))
   }, [])
 
   const currentPuzzle = currentRound ? PUZZLE_CATALOG.find((p) => p.id === currentRound.puzzleId) : null
   const piecesNeeded = currentPuzzle ? currentPuzzle.rows * currentPuzzle.cols : 0
   const currentTargetCode = currentRound ? currentRound.pieceOrder[currentRound.pointer] : null
 
-  const startNewRound = useCallback(() => {
-    const puzzle = pickNextPuzzle(album)
-    const round = { puzzleId: puzzle.id, pieceOrder: shuffledCodes(), pointer: 0, collectedCount: 0 }
-    setCurrentRound(round)
-    setTargetDeadline(Date.now() + PIECE_TIME_LIMIT_SECONDS * 1000)
-    setScreen('reveal')
-    say(t.mascotReveal.replace('{puzzle}', puzzle.name[lang]), 'jump')
-  }, [album, lang, t, say])
+  const startNewRound = useCallback(
+    (categoryId) => {
+      const puzzle = pickNextPuzzle(album, categoryId)
+      const round = { puzzleId: puzzle.id, pieceOrder: shuffledCodes(), pointer: 0, collectedCount: 0 }
+      setCurrentRound(round)
+      setTargetDeadline(Date.now() + PIECE_TIME_LIMIT_SECONDS * 1000)
+      setScreen('reveal')
+      say(t.mascotReveal.replace('{puzzle}', puzzle.name[lang]), 'jump')
+    },
+    [album, lang, t, say]
+  )
+
+  // Called from the category-select card grid. currentPuzzle's own
+  // `category` field is enough to resume the right pool on reload, so we
+  // don't need to persist the chosen category separately.
+  const chooseCategory = useCallback((categoryId) => startNewRound(categoryId), [startNewRound])
 
   const beginCollecting = useCallback(() => {
     setScreen('monitor')
@@ -82,19 +100,25 @@ export function GameProvider({ children }) {
     say(t.mascotGoScan, 'wave')
   }, [say, t])
 
-  // First-run onboarding
+  // First-run onboarding — rules end with a category pick, not straight
+  // into a round.
   const completeOnboarding = useCallback(() => {
     setHasSeenOnboarding(true)
-    startNewRound()
-  }, [startNewRound])
+    setScreen('categorySelect')
+  }, [])
 
   const enterReturning = useCallback(() => {
     if (currentRound) {
+      // Resuming straight into the map screen — without this the mascot
+      // bubble there stays empty (its text only ever gets set by say(),
+      // and nothing had called it yet this session) until the next game
+      // action happens to update it.
       setScreen('monitor')
+      say(t.mascotGoScan, 'wave')
     } else {
-      startNewRound()
+      setScreen('categorySelect')
     }
-  }, [currentRound, startNewRound])
+  }, [currentRound, say, t])
 
   const openScan = useCallback(() => setScreen('scan'), [])
   const closeScan = useCallback(() => setScreen('monitor'), [])
@@ -122,7 +146,14 @@ export function GameProvider({ children }) {
 
   const handleScanSuccess = useCallback(
     (text) => {
-      if (!currentRound || text !== stationQrCode(currentTargetCode)) return false
+      if (!currentRound) return false
+      if (text.trim() !== stationQrCode(currentTargetCode)) {
+        // Valid scan, just not today's target — send them back to the map
+        // with a clear "wrong station" nudge instead of a silent no-op.
+        haptics.warning()
+        say(t.mascotWrongCode, 'idle', 'warning')
+        return false
+      }
       sound.scan()
       haptics.success()
 
@@ -136,6 +167,7 @@ export function GameProvider({ children }) {
         const pool = currentPuzzle?.quiz || []
         const q = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null
         setQuizWrongIndex(null)
+        setQuizCorrectIndex(null)
         setCurrentQuiz(q)
         setScreen('quiz')
         say(t.quizIntro, 'jump')
@@ -171,13 +203,14 @@ export function GameProvider({ children }) {
 
   const answerQuiz = useCallback(
     (optionIndex) => {
-      if (!currentQuiz) return
+      if (!currentQuiz || quizCorrectIndex !== null) return
       if (optionIndex === currentQuiz.correct) {
         sound.success()
         haptics.success()
         const lines = t.mascotQuizCorrect
         say(lines[Math.floor(Math.random() * lines.length)], 'jump')
         setQuizWrongIndex(null)
+        setQuizCorrectIndex(optionIndex)
         setTimeout(() => {
           setCurrentQuiz(null)
           creditPiece()
@@ -190,7 +223,7 @@ export function GameProvider({ children }) {
         say(lines[Math.floor(Math.random() * lines.length)], 'wink')
       }
     },
-    [currentQuiz, sound, haptics, say, t, creditPiece]
+    [currentQuiz, quizCorrectIndex, sound, haptics, say, t, creditPiece]
   )
 
   // Countdown ticking down to targetDeadline — keeps running while the QR
@@ -222,10 +255,14 @@ export function GameProvider({ children }) {
     haptics.success()
   }, [currentRound, currentPuzzle, sound, haptics])
 
-  const continueAfterSolve = useCallback(() => {
+  const goToAlbumAfterSolve = useCallback(() => {
     setLastSolvedPuzzle(null)
-    startNewRound()
-  }, [startNewRound])
+    // Bypass openGallery's usual "remember current screen" capture: after
+    // finishing a round there's no round screen worth returning to, so the
+    // album's own "back to park" should land on the category picker.
+    setPreGalleryScreen('categorySelect')
+    setScreen('gallery')
+  }, [])
 
   const openGallery = useCallback(() => {
     setPreGalleryScreen((prev) => (screen === 'gallery' ? prev : screen))
@@ -248,6 +285,8 @@ export function GameProvider({ children }) {
     hasSeenOnboarding,
     completeOnboarding,
     enterReturning,
+    categories: CATEGORIES,
+    chooseCategory,
     album,
     totalOwned,
     currentRound,
@@ -263,10 +302,11 @@ export function GameProvider({ children }) {
     handleScanSuccess,
     currentQuiz,
     quizWrongIndex,
+    quizCorrectIndex,
     answerQuiz,
     completeAssembly,
     lastSolvedPuzzle,
-    continueAfterSolve,
+    goToAlbumAfterSolve,
     openGallery,
     closeGallery,
     albumButtonPos,

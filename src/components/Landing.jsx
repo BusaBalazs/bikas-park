@@ -18,7 +18,7 @@ export default function Landing() {
       />
       <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-black/75" />
 
-      <div className="relative flex-1 flex flex-col items-center justify-end px-6 pt-6 pb-14 text-center gap-8">
+      <div className="relative flex-1 flex flex-col items-center justify-center px-6 pt-6 pb-14 text-center gap-8">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}

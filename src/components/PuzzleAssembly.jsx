@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useGame } from '../context/GameContext'
 import { useSound } from '../hooks/useSound'
@@ -19,7 +19,7 @@ function shuffleTiles(n) {
 }
 
 export default function PuzzleAssembly() {
-  const { t, lang, currentPuzzle, completeAssembly } = useGame()
+  const { t, currentPuzzle, completeAssembly } = useGame()
   const sound = useSound()
   const haptics = useHaptics()
 
@@ -69,15 +69,6 @@ export default function PuzzleAssembly() {
     setSelected(null)
   }
 
-  const bgSize = `${cols * 100}% ${rows * 100}%`
-  const positionFor = (index) => {
-    const r = Math.floor(index / cols)
-    const c = index % cols
-    const px = cols > 1 ? (c / (cols - 1)) * 100 : 0
-    const py = rows > 1 ? (r / (rows - 1)) * 100 : 0
-    return `${px}% ${py}%`
-  }
-
   if (!currentPuzzle) return null
 
   return (
@@ -105,6 +96,10 @@ export default function PuzzleAssembly() {
       >
         {tiles.map((correctIndex, pos) => {
           const inPlace = correctIndex === pos
+          // Each puzzle tile is its own dedicated image (currentPuzzle.pieces),
+          // not a slice of the finished album picture — so the player is
+          // matching tiles back to their original grid slot, not
+          // reconstructing the reveal photo itself.
           return (
             <motion.button
               key={pos}
@@ -119,9 +114,9 @@ export default function PuzzleAssembly() {
                   : 'border-white/10'
               }`}
               style={{
-                backgroundImage: `url(${currentPuzzle.image})`,
-                backgroundSize: bgSize,
-                backgroundPosition: positionFor(correctIndex),
+                backgroundImage: `url(${currentPuzzle.pieces[correctIndex]})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
               }}
             />
           )

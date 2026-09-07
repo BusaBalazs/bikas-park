@@ -30,42 +30,57 @@ export default function QRScanModal() {
       scannerRef.current?.stop()
     } else {
       setStatus('wrong')
+      scannerRef.current?.stop()
       clearTimeout(wrongTimerRef.current)
-      wrongTimerRef.current = setTimeout(() => setStatus('scanning'), 1400)
+      // Brief red ❌ flash in-camera, then back to the map — the mascot
+      // bubble there now carries the "wrong station, check the map"
+      // message set by handleScanSuccess.
+      wrongTimerRef.current = setTimeout(() => closeScan(), 1100)
     }
   }
 
-  // Persistent scanner instance — created once, reused via start()/stop().
-  useEffect(() => {
-    if (devMode) return
-    let cancelled = false
-    QrScanner.hasCamera().then((has) => {
-      if (cancelled || !has || !videoRef.current) return
-      scannerRef.current = new QrScanner(videoRef.current, (result) => handleDecoded(result.data), {
-        returnDetailedScanResult: true,
-        highlightScanRegion: true,
-      })
-    })
-    return () => {
-      cancelled = true
-      scannerRef.current?.stop()
-      scannerRef.current?.destroy()
-      scannerRef.current = null
-    }
-  }, [devMode]) // eslint-disable-line react-hooks/exhaustive-deps
-
+  // Create + start the scanner fresh every time the modal opens, and fully
+  // tear it down (stop + destroy, releasing the camera stream) every time
+  // it closes. This matters for two reasons, both bugs seen in practice:
+  //  1. The <video> element itself unmounts with the modal (it only exists
+  //     in the DOM while `open` is true), so a scanner instance kept across
+  //     opens would stay bound to a detached, invisible old <video> — it
+  //     kept decoding frames from that orphaned element while the new,
+  //     visible one never got a camera stream attached to it.
+  //  2. The onDecode callback closes over `handleScanSuccess`, which
+  //     changes identity every time the target piece advances. A scanner
+  //     reused across opens kept the *first* closure forever, so it went
+  //     on checking scans against the very first target code even after
+  //     later pieces made it stale.
+  // Recreating on every open sidesteps both: each session gets a scanner
+  // bound to that render's real <video> element and current target code.
   useEffect(() => {
     clearTimeout(wrongTimerRef.current)
-    if (!open) {
-      scannerRef.current?.stop()
-      return
-    }
+
+    if (!open) return
     if (devMode) {
       setStatus('idle')
       return
     }
+    if (!videoRef.current) return
+
     setStatus('scanning')
-    scannerRef.current?.start().catch(() => setStatus('error'))
+
+    const scanner = new QrScanner(videoRef.current, (result) => handleDecoded(result.data), {
+      returnDetailedScanResult: true,
+      highlightScanRegion: true,
+      highlightCodeOutline: true,
+      preferredCamera: 'environment',
+    })
+    scannerRef.current = scanner
+    scanner.start().catch(() => setStatus('error'))
+
+    return () => {
+      scanner.stop()
+      scanner.destroy()
+      if (scannerRef.current === scanner) scannerRef.current = null
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, devMode])
 
   function devSuccess() {

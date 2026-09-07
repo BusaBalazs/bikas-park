@@ -25,7 +25,14 @@ export default function ParkMonitor() {
       <div className="fixed inset-0 bg-gradient-to-b from-black/45 via-black/40 to-black/70" />
 
       <div className="relative z-10 pt-6 px-4 sm:px-6 flex flex-col gap-5 max-w-lg mx-auto">
-        <MascotBubble text={mascot.text} bubbleKey={mascot.actionKey} action={mascot.action} actionKey={mascot.actionKey} size={88} />
+        <MascotBubble
+          text={mascot.text}
+          bubbleKey={mascot.actionKey}
+          action={mascot.action}
+          actionKey={mascot.actionKey}
+          tone={mascot.tone}
+          size={88}
+        />
 
         <div className="grid grid-cols-2 gap-3">
           <div className="rounded-2xl p-3.5 bg-black/35 backdrop-blur-sm border border-white/15">

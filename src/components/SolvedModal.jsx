@@ -5,7 +5,7 @@ import { useGame } from '../context/GameContext'
 import { useSound } from '../hooks/useSound'
 
 export default function SolvedModal() {
-  const { t, lang, lastSolvedPuzzle, continueAfterSolve } = useGame()
+  const { t, lang, lastSolvedPuzzle, goToAlbumAfterSolve } = useGame()
   const sound = useSound()
   const fired = useRef(false)
 
@@ -47,11 +47,11 @@ export default function SolvedModal() {
             <p className="text-xs text-park-dim">{t.solvedBody}</p>
 
             <motion.button
-              onClick={continueAfterSolve}
+              onClick={goToAlbumAfterSolve}
               whileTap={{ scale: 0.94 }}
               className="w-full py-3.5 rounded-2xl font-display font-900 tracking-widest text-park-bg bg-park-green border-2 border-white/40 shadow-neonGreen"
             >
-              {t.continueBtn}
+              {t.goToAlbumBtn}
             </motion.button>
           </motion.div>
         </motion.div>

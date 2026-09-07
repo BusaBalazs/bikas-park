@@ -1,8 +1,8 @@
 // 12 fixed physical station positions (percentages over park-map.jpg),
 // spread across real features of the isometric render. Each station's QR
-// code is fixed (`bikaspark:piece:<code>`) — it's the game logic that
-// randomly decides, each puzzle round, which subset of these codes carries
-// which piece.
+// code is fixed — a plain "1".."12" text code printed on the physical
+// sign — it's the game logic that randomly decides, each puzzle round,
+// which subset of these codes carries which piece.
 export const PIECE_STATIONS = [
   { code: 1, x: 4, y: 53 },
   { code: 2, x: 35, y: 46 },
@@ -18,6 +18,10 @@ export const PIECE_STATIONS = [
   { code: 12, x: 60, y: 68 },
 ]
 
+// The physical QR codes just encode the plain station number as text
+// ("6", not a URL or namespaced string) — this is the single source of
+// truth for that format, so both the scanner check and the dev-mode
+// simulate button stay in sync with what's printed on the signs.
 export function stationQrCode(code) {
-  return `bikaspark:piece:${code}`
+  return String(code)
 }
