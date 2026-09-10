@@ -77,7 +77,13 @@ export function GameProvider({ children }) {
   const startNewRound = useCallback(
     (categoryId) => {
       const puzzle = pickNextPuzzle(album, categoryId)
-      const round = { puzzleId: puzzle.id, pieceOrder: shuffledCodes(), pointer: 0, collectedCount: 0 }
+        const round = {
+          puzzleId: puzzle.id,
+          pieceOrder: shuffledCodes(),
+          pointer: 0,
+          collectedCount: 0,
+          askedQuizIndexes: [],
+        }
       setCurrentRound(round)
       setTargetDeadline(Date.now() + PIECE_TIME_LIMIT_SECONDS * 1000)
       setScreen('reveal')
@@ -165,7 +171,24 @@ export function GameProvider({ children }) {
       // the player answers correctly (see answerQuiz).
       setTimeout(() => {
         const pool = currentPuzzle?.quiz || []
-        const q = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null
+            const askedQuizIndexes = currentRound.askedQuizIndexes ?? []
+            const availableIndexes = pool
+              .map((_, index) => index)
+              .filter((index) => !askedQuizIndexes.includes(index))
+            const indexes = availableIndexes.length > 0
+              ? availableIndexes
+              : pool.map((_, index) => index)
+            const questionIndex = indexes.length > 0
+              ? indexes[Math.floor(Math.random() * indexes.length)]
+              : null
+            const q = questionIndex === null ? null : pool[questionIndex]
+            setCurrentRound((prev) => {
+              if (!prev || questionIndex === null) return prev
+              const nextAskedIndexes = availableIndexes.length > 0
+                ? [...(prev.askedQuizIndexes ?? []), questionIndex]
+                : [questionIndex]
+              return { ...prev, askedQuizIndexes: nextAskedIndexes }
+            })
         setQuizWrongIndex(null)
         setQuizCorrectIndex(null)
         setCurrentQuiz(q)

@@ -7,8 +7,8 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-40 flex items-center justify-between px-4 py-3 sm:px-6 bg-park-bg/70 backdrop-blur-sm border-b border-white/10">
       <div className="flex items-center gap-2">
-        <div className=" rounded-xl bg-park-green border-2 border-white/40 flex items-center justify-center shadow-neonGreen shrink-0 px-1 py-1">
-          <span className="text-lg text-gray-800">Bikás park</span>     
+        <div className=" rounded-xl bg-park-green border-2 border-white/40 flex items-center justify-center shadow-neonGreen shrink-0 px-2 py-1">
+          <span className="text-lg text-gray-800">Felfedező</span>     
         </div>
       </div>
 

@@ -152,9 +152,9 @@ export const PUZZLE_CATALOG = [
   },
   {
     id: "mars",
-    category: "science",
+    category: "planets",
     name: { hu: "Mars", en: "Mars" },
-    image: "/images/puzzles/mars-album.png",
+    image: "/images/puzzles/mars-album.webp",
     pieces: Array.from(
       { length: 8 },
       (_, i) => `/images/puzzles/pieces/mars/${i}.webp`,
