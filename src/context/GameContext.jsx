@@ -34,7 +34,7 @@ const persisted = loadState()
 
 export function GameProvider({ children }) {
   const [lang, setLang] = useState(persisted?.lang ?? detectLang())
-  const [devMode, setDevMode] = useState(false)
+  const [devMode, setDevMode] = useState(true)
   // landing | onboarding | categorySelect | reveal | monitor | scan | quiz | assemble | gallery
   const [screen, setScreen] = useState('landing')
 
@@ -237,7 +237,7 @@ export function GameProvider({ children }) {
         setTimeout(() => {
           setCurrentQuiz(null)
           creditPiece()
-        }, 900)
+        }, 1800)
       } else {
         sound.fail()
         haptics.warning()

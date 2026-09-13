@@ -5,6 +5,7 @@ export default {
     extend: {
       fontFamily: {
         display: ['"Orbitron"', 'sans-serif'],
+        header: ['"Caacupe One"', 'sans-serif'],
         body: ['"Inter"', 'sans-serif'],
       },
       colors: {
