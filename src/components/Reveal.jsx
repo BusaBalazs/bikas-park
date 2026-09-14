@@ -23,6 +23,9 @@ export default function Reveal() {
 
         <MascotBubble text={mascot.text} bubbleKey={mascot.actionKey} action={mascot.action} actionKey={mascot.actionKey} size={100} />
 
+        {/* <p className="font-display font-700 text-white text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]">
+          {currentPuzzle.name[lang]}
+        </p> */}
         <motion.div
           initial={{ opacity: 0, scale: 0.85, rotate: -3 }}
           animate={{ opacity: 1, scale: 1, rotate: 0 }}
@@ -31,9 +34,6 @@ export default function Reveal() {
         >
           <img src={currentPuzzle.image} alt={currentPuzzle.name[lang]} className="w-full h-full object-cover" />
         </motion.div>
-        <p className="font-display font-700 text-white text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]">
-          {currentPuzzle.name[lang]}
-        </p>
 
         <motion.button
           onClick={beginCollecting}

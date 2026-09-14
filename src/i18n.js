@@ -60,7 +60,7 @@ export const translations = {
       "Ez nem a keresett kód! Nézd meg a térképen a bejelölt pontot, és azt olvasd be! 🧐",
     revealTitle: "Új kép vár rád!",
     revealButton: "Irány a park!",
-    scanForPiece: "QR KÓD BEOLVASÁSA",
+    scanForPiece: "TESZT BEOLVASÁSA",
     pieceTimer: "Hátralévő idő",
     pieceProgress: "Összegyűjtött darabok",
     assembleTitle: "Rakd ki a képet!",
@@ -90,7 +90,7 @@ export const translations = {
     backToLanding: "VISSZA A KEZDŐLAPRA",
     reasonQuiz: "Rossz válasz a kérdésre.",
     quizWrong: "Nem egészen — próbáld újra!",
-    devScanBtn: "DEV: Sikeres beolvasás szimulálása",
+    devScanBtn: "Sikeres beolvasás szimulálása",
   },
   en: {
     appName: "Bikás Park Explorer",
@@ -153,7 +153,7 @@ export const translations = {
       "That's not the code we're looking for! Check the marked point on the map and scan that one! 🧐",
     revealTitle: "A new picture awaits!",
     revealButton: "Head to the park!",
-    scanForPiece: "SCAN QR CODE",
+    scanForPiece: "TEST SCAN",
     pieceTimer: "Time remaining",
     pieceProgress: "Collected pieces",
     assembleTitle: "Solve the puzzle!",
@@ -183,7 +183,7 @@ export const translations = {
     backToLanding: "BACK TO HOME",
     reasonQuiz: "Incorrect answer to the question.",
     quizWrong: "Not quite — try again!",
-    devScanBtn: "DEV: Simulate successful scan",
+    devScanBtn: "Simulate successful scan",
   },
 };
 
